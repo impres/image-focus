@@ -36,7 +36,7 @@ class CropService
      */
     private function setCropData($attachmentId, $focusPoint)
     {
-        $this->getImageSizes();
+        //$this->getImageSizes();
         $this->getAttachment($attachmentId);
         $this->setFocusPoint($focusPoint);
         $this->saveFocusPointToDB();
@@ -50,10 +50,10 @@ class CropService
     public function getImageSizes()
     {
         // Get all the default WordPress image Sizes
-        foreach ((array)get_intermediate_image_sizes() as $imageSize) {
-            if (in_array($imageSize, ['thumbnail', 'medium', 'medium_large', 'large'], true)
-                && get_option("{$imageSize}_crop")
-            ) {
+        foreach (
+            (array) get_intermediate_image_sizes() as $imageSize
+        ) {
+            if (in_array($imageSize, ['thumbnail', 'medium', 'medium_large', 'large'], true) && get_option("{$imageSize}_crop")) {
                 $this->imageSizes[$imageSize] = [
                     'width'  => (int)get_option("{$imageSize}_size_w"),
                     'height' => (int)get_option("{$imageSize}_size_h"),
