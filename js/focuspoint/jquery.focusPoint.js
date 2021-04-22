@@ -114,7 +114,7 @@
 
 			getData: function ()
 			{
-				base.attachment._id = $(base.el).data('id');
+				base.attachment._id = helper.getUrlParameter('item');
 
 				var prepData = {
 					id: base.attachment._id
@@ -491,28 +491,36 @@
 		};
 
 		//Helper functions
-		var helper = {};
+		var helper = {
+			 calc: {
+				 /**
+				  * Calculate the Max Range
+				  *
+				  * @param input
+				  * @param min
+				  * @param max
+				  * @returns {number}
+				  */
+				 maxRange: function (input, min, max)
+				 {
+					 var output = input;
 
-		helper.calc = {
-			/**
-			 * Calculate the Max Range
-			 *
-			 * @param input
-			 * @param min
-			 * @param max
-			 * @returns {number}
-			 */
-			maxRange: function (input, min, max)
-			{
-				var output = input;
+					 if (input < min) {
+						 output = min;
+					 } else if (input > max) {
+						 output = max;
+					 }
 
-				if (input < min) {
-					output = min;
-				} else if (input > max) {
-					output = max;
-				}
+					 return output;
+				 },
+			 },
 
-				return output;
+			getUrlParameter: function(name) {
+				var vars = {};
+				var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {
+					vars[key] = value;
+				});
+				return vars[name] || null;
 			}
 		};
 	};
@@ -537,8 +545,7 @@
 {
 	$(document).on('ready', function ()
 	{
-		setInterval(function ()
-		{
+		$('body').on('click', 'li.attachment', function() {
 			var $attachmentDetails = $('.attachment-details');
 			var $detailImage = $attachmentDetails.find('.details-image');
 
@@ -549,6 +556,6 @@
 					console.log(e);
 				}
 			}
-		}, 500);
+		});
 	});
 }(jQuery, window, document));

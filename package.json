@@ -17,11 +17,12 @@
     "grunt-sass": "*",
     "grunt-stylefmt": "^2.0.0",
     "matchdep": "*",
+    "node-sass": "^5.0.0",
+    "postcss": "^8.2.10",
     "postcss-scss": "*",
     "postcss-sorting": "^1.6.1",
     "stylefmt": "^4.2.3",
     "time-grunt": "*"
   },
-  "dependencies": {
-  }
+  "dependencies": {}
 }

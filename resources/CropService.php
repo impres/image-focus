@@ -36,7 +36,7 @@ class CropService
      */
     private function setCropData($attachmentId, $focusPoint)
     {
-        //$this->getImageSizes();
+        $this->getImageSizes();
         $this->getAttachment($attachmentId);
         $this->setFocusPoint($focusPoint);
         $this->saveFocusPointToDB();
@@ -124,16 +124,24 @@ class CropService
     private function cropAttachment()
     {
         // Loop trough all the image sizes connected to this attachment
-        foreach ($this->imageSizes as $imageSize) {
+        foreach ($this->imageSizes as $name => $imageSize) {
+
 
             // Stop this iteration if the attachment is too small to be cropped for this image size
             if ($imageSize['width'] > $this->attachment['width'] || $imageSize['height'] > $this->attachment['height']) {
                 continue;
             }
 
-            // Get the file path of the attachment and the delete the old image
-            $imageFilePath = $this->getImageFilePath($imageSize);
-            $this->removeOldImage($imageFilePath);
+            try {
+                // Get the file path of the attachment and the delete the old image
+                $imageFilePath = $this->getImageFilePath($name);
+
+            } catch (\Exception $exception) {
+                continue;
+            }
+
+            // Remove existing image
+            @unlink($imageFilePath);
 
             // Now execute the actual image crop
             $this->cropImage($imageSize, $imageFilePath);
@@ -148,30 +156,16 @@ class CropService
      */
     private function getImageFilePath($imageSize)
     {
+        $filePath = image_get_intermediate_size($this->attachment['id'], $imageSize)["path"] ?? null;
+
+        if ($filePath === null) {
+            throw new \Exception("No path found for $imageSize in attachment: {$this->attachment['id']}");
+        }
+
         // Get the path to the WordPress upload directory
         $uploadDir = wp_upload_dir()['basedir'] . '/';
 
-        // Get the attachment name
-        $attachedFile = get_post_meta($this->attachment['id'], '_wp_attached_file', true);
-        $attachment = pathinfo($attachedFile)['filename'];
-        $croppedAttachment = $attachment . '-' . $imageSize['width'] . 'x' . $imageSize['height'];
-
-        // Add the image size to the the name of the attachment
-        $fileName = str_replace($attachment, $croppedAttachment, $attachedFile);
-
-        return $uploadDir . $fileName;
-    }
-
-    /**
-     * Remove the old attachment
-     *
-     * @param $file
-     */
-    private function removeOldImage($file)
-    {
-        if (file_exists($file)) {
-            unlink($file);
-        }
+        return $uploadDir . $filePath;
     }
 
     /**
@@ -224,7 +218,7 @@ class CropService
         }
 
         // Excecute the WordPress image crop function
-        wp_crop_image($this->attachment['id'],
+        $newPath = wp_crop_image($this->attachment['id'],
             $dimensions['x']['start'],
             $dimensions['y']['start'],
             $dimensions['x']['end'] - $dimensions['x']['start'],
@@ -234,6 +228,12 @@ class CropService
             false,
             $imageFilePath
         );
+
+        // Since WP 5.4 wp_crop_image always generates a -1.png unique path for image subsizes
+        // @see https://github.com/WordPress/WordPress/commit/15a566edef8afe6dc1f23a841bd557a8cecf35d1
+        // We copy the newly created file over to the old path and then remove the new one.
+        copy($newPath, $imageFilePath);
+        unlink($newPath);
 
         return $this;
     }
